@@ -12,6 +12,42 @@ TRIAGE_MEAN = 10        #how long triage takes
 TREATMENT_URGENT = 60   #doctor time to treat for urgent
 TREATMENT_NON_UR = 35   #doctor time to treat for non urgent
 
+#My actual hourly arrival rates from inpatient_arrivals
+#Figures from explore_data.py
+#They represent admitted patients per hour. Since about 12.6% of all A&E
+#patients are admitted (from ed_visits.csv), we scale up to get
+#the total A&E arrival rate for each hour.
+
+#IMPORTANT:Need to mention this calc in the methods? chapter.
+#This is how to connect my dataset to my sim
+
+admit_hourly_rates = [
+    0.792, 0.822, 0.666, 0.611, 0.742, 0.523,   #00:00–05:00
+    0.627, 1.077, 1.471, 2.164, 2.668, 3.000,   #06:00–11:00
+    3.129, 3.129, 2.962, 2.707, 2.605, 2.658,   #12:00–17:00
+    2.422, 2.255, 2.211, 1.337, 1.112, 0.899    #18:00–23:00
+]
+
+admission_rate = 0.126  #figure from ed_visits 12.6% of patients admitted
+
+# Scale admitted rates up to total A&E arrivals
+total_hourly_rates = [r / admission_rate for r in admit_hourly_rates]
+
+
+def get_arrival_rate(sim_minute):
+    """
+    Returns the arrival rate (patients per minute) for a point in simulated time.
+    
+    sim_minute // 60 gives the hour now
+    The % 24 wraps around so multi-day simulations work properly
+    
+    Convert from per hour to per minut as thats how simpy works
+    """
+    hour = int(sim_minute // 60) % 24
+    rate_per_hour   = total_hourly_rates[hour]
+    rate_per_minute = rate_per_hour / 60
+    return rate_per_minute
+
 #Process for patient
 """
 Models a patient's complete journey through A&E
@@ -76,20 +112,27 @@ def patient(env, patient_id, triage_nurse, doctor, results):
 #Arrival Generator
 """
 Keeps generating patients arriving at random times
-For now I am using random.expovariate(1/20) to get
-distribution between arrivals of 20 mins
-So should be about 3 patients per hour arriving
-*NEED TO CHANGE* to real hourly rates
+
 """
-def patient_arrivals(env, triage_nurse, doctor, results):
+def patient_arrivals(env, triage_nurse, doctor, results, counters):
     patient_id = 0
     while True:
         patient_id += 1
+        counters['arrivals'] += 1
+
         env.process(patient(env, patient_id, triage_nurse, doctor, results))
-        yield env.timeout(random.expovariate(1 / 20))
+        
+        #Gets arrival rate for THIS moment in simulated time
+        rate_per_min = get_arrival_rate(env.now)
+        
+        #Inter-arrival time = exponential with mean = 1/rate
+        #Rate is 0.1 patients/min, mean gap is 10 minutes
+        inter_arrival = random.expovariate(rate_per_min)
+        yield env.timeout(inter_arrival)
 
 
-def run_simulation(n_nurses=2, n_doctors=2, sim_duration=480):
+def run_simulation(n_nurses=2, n_doctors=2, sim_duration=1440):
+    #1440 minutes means 24 hours - 1 full simulated day
     """
     Build and run sim
     Want to have it so user can change the params
@@ -100,11 +143,15 @@ def run_simulation(n_nurses=2, n_doctors=2, sim_duration=480):
     triage_nurse = simpy.PriorityResource(env, capacity=n_nurses)
     doctor       = simpy.PriorityResource(env, capacity=n_doctors)
     results = []
-    
-    env.process(patient_arrivals(env, triage_nurse, doctor, results))
+    counters = {'arrivals': 0}
+    env.process(patient_arrivals(env, triage_nurse, doctor, results, counters))
     env.run(until=sim_duration)
     
-    return pd.DataFrame(results)
+    df = pd.DataFrame(results)
+    print("Total arrivals:", counters['arrivals'])
+    print("Total completed:", len(df))
+    return df
+
 
 #Summary 
 df = run_simulation(n_nurses=2, n_doctors=2)
