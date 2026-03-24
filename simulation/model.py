@@ -33,6 +33,16 @@ admission_rate = 0.126  #figure from ed_visits 12.6% of patients admitted
 # Scale admitted rates up to total A&E arrivals
 total_hourly_rates = [r / admission_rate for r in admit_hourly_rates]
 
+ADMISSION_PROB = {
+    'urgent':       0.32, #~32% of urgent patients admitted
+    'non_urgent':   0.06  #~6% of non-urgent patients admitted
+}
+
+#Mean time in A&E before ward transfer - taken form ed_visits
+#Admitted patients to stay longer while waiting for a bed to become available
+mean_los_admitted   =234.0 #minutes - taken from dataset
+mean_los_discharged =158.0 #minutes - taken form dataset
+
 
 def get_arrival_rate(sim_minute):
     """
@@ -94,14 +104,27 @@ def patient(env, patient_id, triage_nurse, doctor, results):
         treatment_mean = (TREATMENT_URGENT if is_urgent
                           else TREATMENT_NON_UR)
         yield env.timeout(random.expovariate(1 / treatment_mean))
+
+    #Stage 3: Admitted or Dishcarged?
+    #Decide whether patient is admitted based on triage acuity
+    #Probability comes from ed_visits analysis
+    admission_prob = ADMISSION_PROB[urgency]
+    is_admitted    = random.random() < admission_prob
     
+    if is_admitted:
+        #Admitted patients wait for ward bed after treatment
+        #Extra wait is why admitted patients have higher los
+        #Delaye represents bed request -> porter -> transfer
+        bed_wait_mean = 45 #minutes - ward transfer wait
+        yield env.timeout(random.expovariate(1/bed_wait_mean))
+
     #doctor moves onto next patient
     total_time = env.now - arrival_time
-    
-    #Storing current patients record
+
     results.append({
         'patient_id':     patient_id,
         'urgency':        urgency,
+        'is_admitted':    is_admitted,
         'arrival_min':    round(arrival_time, 2),
         'triage_wait':    round(triage_wait, 2),
         'doctor_wait':    round(doctor_wait, 2),
@@ -154,14 +177,19 @@ def run_simulation(n_nurses=2, n_doctors=2, sim_duration=1440):
 
 
 #Summary 
-df = run_simulation(n_nurses=2, n_doctors=2)
+df = run_simulation(n_nurses=6, n_doctors=11)
 
 print("OVERALL")
 print(f"Patients seen:       {len(df)}")
-print(f"Mean triage wait:    {df['triage_wait'].mean():.1f} min")
-print(f"Mean doctor wait:    {df['doctor_wait'].mean():.1f} min")
-print(f"Mean total time:     {df['total_min'].mean():.1f} min")
-print(f"4-hour breach rate:  {df['four_hr_breach'].mean()*100:.1f}%")
+print(f"Admission rate:       {df['is_admitted'].mean()*100:.1f}%")
+print(f"Mean triage wait:     {df['triage_wait'].mean():.1f} min")
+print(f"Mean doctor wait:     {df['doctor_wait'].mean():.1f} min")
+print(f"Mean total time:      {df['total_min'].mean():.1f} min")
+print(f"4-hour breach rate:   {df['four_hr_breach'].mean()*100:.1f}%")
+
+print("\nADMITTED vs DISCHARGED")
+print(df.groupby('is_admitted')[['triage_wait','doctor_wait','total_min']]
+        .mean().round(1))
 
 print("\nBY URGENCY")
 print(df.groupby('urgency')[['triage_wait','doctor_wait','total_min']]
