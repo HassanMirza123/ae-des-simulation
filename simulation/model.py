@@ -113,6 +113,22 @@ def patient(env, patient_id, triage_nurse, doctor, results):
         'four_hr_breach': total_time > 240
     })
 
+
+def monitor_resources(env, triage_nurse, doctor, triage_util, doctor_util, interval=30):
+#including average staff utilisation from each replication, essentially checking how busy each nurse/doctor is during run
+    while True:
+        #.count = number of resource units currently in use
+        #.capacity = total available units
+        triage_util.append({
+            'time':         env.now,
+            'utilisation':  triage_nurse.count / triage_nurse.capacity
+        })
+        doctor_util.append({
+            'time':         env.now,
+            'utilisation':  doctor.count / doctor.capacity
+        })
+        yield env.timeout(interval)
+
 #Arrival Generator
 def patient_arrivals(env, triage_nurse, doctor, results):
     patient_id = 0
@@ -164,9 +180,16 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
         triage_nurse = simpy.PriorityResource(env, capacity=n_nurses)
         doctor       = simpy.PriorityResource(env, capacity=n_doctors)
         results      = []
-
+        #Storing utilisation snapshots
+        triage_util = []
+        doctor_util = []
 
         env.process(patient_arrivals(env, triage_nurse, doctor, results))
+
+        #Launch monitor as parallel process alongside arrivals
+        env.process(monitor_resources(env, triage_nurse, doctor, triage_util, doctor_util, interval=30
+        ))
+
         env.run(until=sim_duration)
 
         df = pd.DataFrame(results)
@@ -174,6 +197,10 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
         #Ignore runs if almost nobody completed (means the queue overloaded)
         if len(df) < 10:
             continue
+
+        #Convert utilisation snapshots into Df
+        triage_util_df = pd.DataFrame(triage_util)
+        doctor_util_df = pd.DataFrame(doctor_util)
 
         replication_summaries.append({
             'seed':              seed,
@@ -183,6 +210,8 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
             'mean_doctor_wait':  df['doctor_wait'].mean(),
             'mean_total_time':   df['total_min'].mean(),
             'breach_rate':       df['four_hr_breach'].mean(),
+            'triage_util_mean':  triage_util_df['utilisation'].mean(),
+            'doctor_util_mean':  doctor_util_df['utilisation'].mean(),
         })
 
     return pd.DataFrame(replication_summaries)
@@ -192,7 +221,8 @@ def summarise_replications(rep_df):
     #Print mean results and 95% confidence intervals
     metrics = ['breach_rate', 'mean_total_time',
                'mean_doctor_wait', 'mean_triage_wait',
-               'admission_rate']
+               'admission_rate', 'triage_util_mean',
+               'doctor_util_mean']
 
     print("RESULTS ACROSS 30 REPLICATIONS")
     print(f"{'Metric':<22} {'Mean':>8} {'95% CI Lower':>14} {'95% CI Upper':>14}")
