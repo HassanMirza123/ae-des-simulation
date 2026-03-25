@@ -1,8 +1,9 @@
 import simpy
 import random
 import pandas as pd
+import numpy as np
+from scipy import stats
 
-random.seed(42)
 
 #Setting priority, so that urgent patietns always jump ahead of non urgent
 PRIORITY = {'urgent': 1, 'non_urgent': 2}
@@ -14,9 +15,7 @@ TREATMENT_NON_UR = 35   #doctor time to treat for non urgent
 
 #My actual hourly arrival rates from inpatient_arrivals
 #Figures from explore_data.py
-#They represent admitted patients per hour. Since about 12.6% of all A&E
-#patients are admitted (from ed_visits.csv), we scale up to get
-#the total A&E arrival rate for each hour.
+#I scale these up using overall admission rate to estimate total A&E arrivals by hour
 
 #IMPORTANT:Need to mention this calc in the methods? chapter.
 #This is how to connect my dataset to my sim
@@ -30,7 +29,7 @@ admit_hourly_rates = [
 
 admission_rate = 0.126  #figure from ed_visits 12.6% of patients admitted
 
-# Scale admitted rates up to total A&E arrivals
+#Estimated total A&E arrivals per hour
 total_hourly_rates = [r / admission_rate for r in admit_hourly_rates]
 
 ADMISSION_PROB = {
@@ -45,30 +44,13 @@ mean_los_discharged =158.0 #minutes - taken form dataset
 
 
 def get_arrival_rate(sim_minute):
-    """
-    Returns the arrival rate (patients per minute) for a point in simulated time.
-    
-    sim_minute // 60 gives the hour now
-    The % 24 wraps around so multi-day simulations work properly
-    
-    Convert from per hour to per minut as thats how simpy works
-    """
+    #Find current hour in sim and return the matching arrival rate in patients per minute
     hour = int(sim_minute // 60) % 24
     rate_per_hour   = total_hourly_rates[hour]
     rate_per_minute = rate_per_hour / 60
     return rate_per_minute
 
-#Process for patient
-"""
-Models a patient's complete journey through A&E
-
-As of now there are 2 stages
-    1.Traige: needs a triage nurse
-    2.Treatment: doctor takes longer depending on urgency
-
-Either patient will be seen immediately (resource free) or joins a queue
-(resource busy) .request() handles this
-"""
+#Models a patient's complete journey through A&E
 def patient(env, patient_id, triage_nurse, doctor, results):
     
     arrival_time = env.now
@@ -100,7 +82,6 @@ def patient(env, patient_id, triage_nurse, doctor, results):
         
         doctor_wait = env.now - post_triage_time
         
-        # Urgent patients take longer to treat
         treatment_mean = (TREATMENT_URGENT if is_urgent
                           else TREATMENT_NON_UR)
         yield env.timeout(random.expovariate(1 / treatment_mean))
@@ -133,64 +114,107 @@ def patient(env, patient_id, triage_nurse, doctor, results):
     })
 
 #Arrival Generator
-"""
-Keeps generating patients arriving at random times
-
-"""
-def patient_arrivals(env, triage_nurse, doctor, results, counters):
+def patient_arrivals(env, triage_nurse, doctor, results):
     patient_id = 0
     while True:
         patient_id += 1
-        counters['arrivals'] += 1
-
         env.process(patient(env, patient_id, triage_nurse, doctor, results))
         
-        #Gets arrival rate for THIS moment in simulated time
+        #Sample next gap between arrivals using the rate for current simulated hour
         rate_per_min = get_arrival_rate(env.now)
         
-        #Inter-arrival time = exponential with mean = 1/rate
-        #Rate is 0.1 patients/min, mean gap is 10 minutes
         inter_arrival = random.expovariate(rate_per_min)
         yield env.timeout(inter_arrival)
 
 
 def run_simulation(n_nurses=2, n_doctors=2, sim_duration=1440):
     #1440 minutes means 24 hours - 1 full simulated day
-    """
-    Build and run sim
-    Want to have it so user can change the params
-    """
     env     = simpy.Environment()
-    # PriorityResource instead of Resource
+    #PriorityResource instead of Resource
     #capacity is how many patients can be served simultaneously
     triage_nurse = simpy.PriorityResource(env, capacity=n_nurses)
     doctor       = simpy.PriorityResource(env, capacity=n_doctors)
     results = []
-    counters = {'arrivals': 0}
-    env.process(patient_arrivals(env, triage_nurse, doctor, results, counters))
+    env.process(patient_arrivals(env, triage_nurse, doctor, results))
     env.run(until=sim_duration)
     
-    df = pd.DataFrame(results)
-    print("Total arrivals:", counters['arrivals'])
-    print("Total completed:", len(df))
-    return df
+    return pd.DataFrame(results)
+
+#Baseline staffing for the simulation
+#These values were chosen by calibrating the model against the main summary results from ed_visits.csv.
+
+#The main targets used here were:
+# - breach rate = 19.9%
+# - admission rate = 12.6%
+
+#In the current version, n_nurses=6 and n_doctors=13 produced results that were reasonably close to those targets across
+#30 replications, so this is being used as the baseline scenario.
+
+#Data source: UCL-CORU patientflow dataset on Zenodo
+
+def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
+                               sim_duration=1440):
+    #Run model several times with diff seeds so the results not based on single random run
+    replication_summaries = []
+
+    for seed in range(n_reps):
+        random.seed(seed)
+
+        env          = simpy.Environment()
+        triage_nurse = simpy.PriorityResource(env, capacity=n_nurses)
+        doctor       = simpy.PriorityResource(env, capacity=n_doctors)
+        results      = []
 
 
-#Summary 
-df = run_simulation(n_nurses=6, n_doctors=11)
+        env.process(patient_arrivals(env, triage_nurse, doctor, results))
+        env.run(until=sim_duration)
 
-print("OVERALL")
-print(f"Patients seen:       {len(df)}")
-print(f"Admission rate:       {df['is_admitted'].mean()*100:.1f}%")
-print(f"Mean triage wait:     {df['triage_wait'].mean():.1f} min")
-print(f"Mean doctor wait:     {df['doctor_wait'].mean():.1f} min")
-print(f"Mean total time:      {df['total_min'].mean():.1f} min")
-print(f"4-hour breach rate:   {df['four_hr_breach'].mean()*100:.1f}%")
+        df = pd.DataFrame(results)
 
-print("\nADMITTED vs DISCHARGED")
-print(df.groupby('is_admitted')[['triage_wait','doctor_wait','total_min']]
-        .mean().round(1))
+        #Ignore runs if almost nobody completed (means the queue overloaded)
+        if len(df) < 10:
+            continue
 
-print("\nBY URGENCY")
-print(df.groupby('urgency')[['triage_wait','doctor_wait','total_min']]
-        .mean().round(1))
+        replication_summaries.append({
+            'seed':              seed,
+            'n_completed':       len(df),
+            'admission_rate':    df['is_admitted'].mean(),
+            'mean_triage_wait':  df['triage_wait'].mean(),
+            'mean_doctor_wait':  df['doctor_wait'].mean(),
+            'mean_total_time':   df['total_min'].mean(),
+            'breach_rate':       df['four_hr_breach'].mean(),
+        })
+
+    return pd.DataFrame(replication_summaries)
+
+
+def summarise_replications(rep_df):
+    #Print mean results and 95% confidence intervals
+    metrics = ['breach_rate', 'mean_total_time',
+               'mean_doctor_wait', 'mean_triage_wait',
+               'admission_rate']
+
+    print("RESULTS ACROSS 30 REPLICATIONS")
+    print(f"{'Metric':<22} {'Mean':>8} {'95% CI Lower':>14} {'95% CI Upper':>14}")
+
+    for metric in metrics:
+        values = rep_df[metric].values
+        mean   = np.mean(values)
+        #scipy.stats.t.interval gives a 95% confidence interval
+        #using the t distribution (best for small samples)
+        ci     = stats.t.interval(
+                     confidence=0.95,
+                     df=len(values) - 1,   # degrees of freedom
+                     loc=mean,
+                     scale=stats.sem(values)  # standard error of mean
+                 )
+        print(f"{metric:<22} {mean:>8.3f} {ci[0]:>14.3f} {ci[1]:>14.3f}")
+
+    print(f"\nReplications completed: {len(rep_df)}/30")
+    print(f"Mean patients per run:  {rep_df['n_completed'].mean():.0f}")
+
+BASELINE_NURSES = 6
+BASELINE_DOCTORS = 13
+#Run everything
+rep_df = run_multiple_replications(n_reps=30, n_nurses=BASELINE_NURSES, n_doctors=BASELINE_DOCTORS)
+summarise_replications(rep_df)
