@@ -1,4 +1,10 @@
 import streamlit as st
+import sys
+import os
+from model import run_multiple_replications
+
+#Path for simulation file
+sys.path.append(os.path.join(os.path.dirname(__file__), 'simulation'))
 
 st.set_page_config(
     page_title="A&E Decision Support",layout="wide"
@@ -25,3 +31,32 @@ n_reps = st.sidebar.slider(
 )
 
 run_button = st.sidebar.button("▶ Run Simulation", type="primary")
+
+#Once buttons clicked, run reps and output metrics
+if run_button:
+    with st.spinner("Running the Sim"):
+        rep_df = run_multiple_replications(n_reps=n_nurses, n_nurses=n_nurses, n_doctors=n_doctors)
+    
+    #Metrics
+    st.subheader("Results")
+    
+    c1,c2,c3,c4 = st.columns(4)
+
+    breach_mean =rep_df['breach_rate'].mean()*100
+    total_mean =rep_df['mean_total_time'].mean()
+    doc_util =rep_df['doctor_util_mean'].mean()*100
+    adm_rate =rep_df['admission_rate'].mean()*100
+
+    c1.metric(
+        label="4 hour breach rate", value=f"{breach_mean:.1f}%"
+    )
+    c2.metric(
+        label="Mean time in A&E", value=f"{total_mean:.0f}min"
+    )
+    c3.metric(
+        label="Dcotor utilisation", value=f"{doc_util:.1f}%"
+    )
+    c4.metric(
+        label="Admission rate", value=f"{adm_rate:.1f}%"
+    )
+
