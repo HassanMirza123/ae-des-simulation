@@ -1,6 +1,9 @@
 import streamlit as st
 import sys
 import os
+import numpy as np
+import plotly.graph_objects as go
+from scipy import stats
 
 #Path for simulation file
 sys.path.append(os.path.join(os.path.dirname(__file__), 'simulation'))
@@ -47,16 +50,27 @@ if run_button:
     doc_util =rep_df['doctor_util_mean'].mean()*100
     adm_rate =rep_df['admission_rate'].mean()*100
 
+    #Baseline results from 6 nurses, 13 docs, 30 reps
+    BASELINE_BREACH_RATE = 17.4 #%
+    BASELINE_TOTAL_TIME = 130.3 #min
+    BASELINE_DOC_UTIL = 68.8 #%
+    BASELINE_ADMISSION = 14.5 #%
+
     c1.metric(
-        label="4 hour breach rate", value=f"{breach_mean:.1f}%"
+        label="4 hour breach rate", value=f"{breach_mean:.1f}%", delta=f"{breach_mean - BASELINE_BREACH_RATE:.1f}% vs baseline",
+        delta_color="inverse"
     )
     c2.metric(
-        label="Mean time in A&E", value=f"{total_mean:.0f}min"
+        label="Mean time in A&E", value=f"{total_mean:.0f}min", delta=f"{total_mean - BASELINE_TOTAL_TIME:.0f} min vs baseline",
+        delta_color="inverse"
     )
     c3.metric(
-        label="Dcotor utilisation", value=f"{doc_util:.1f}%"
+        label="Dcotor utilisation", value=f"{doc_util:.1f}%", delta=f"{doc_util - BASELINE_DOC_UTIL:.1f}% vs baseline",
+        delta_color="inverse"
     )
     c4.metric(
-        label="Admission rate", value=f"{adm_rate:.1f}%"
+        label="Admission rate", value=f"{adm_rate:.1f}%", delta=f"{adm_rate - BASELINE_ADMISSION:.1f}% vs baseline",
+        delta_color="off"
     )
+
 
