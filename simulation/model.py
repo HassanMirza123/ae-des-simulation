@@ -172,6 +172,7 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
                                sim_duration=1440):
     #Run model several times with diff seeds so the results not based on single random run
     replication_summaries = []
+    all_patients = [] #collecting every patient
 
     for seed in range(n_reps):
         random.seed(seed)
@@ -198,6 +199,9 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
         if len(df) < 10:
             continue
 
+        df['replication'] = seed
+        all_patients.append(df)
+
         #Convert utilisation snapshots into Df
         triage_util_df = pd.DataFrame(triage_util)
         doctor_util_df = pd.DataFrame(doctor_util)
@@ -214,7 +218,10 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
             'doctor_util_mean':  doctor_util_df['utilisation'].mean(),
         })
 
-    return pd.DataFrame(replication_summaries)
+    rep_df = pd.DataFrame(replication_summaries)
+    patients_df = pd.concat(all_patients, ignore_index=True)
+
+    return rep_df,patients_df
 
 
 def summarise_replications(rep_df):
@@ -246,5 +253,5 @@ def summarise_replications(rep_df):
 BASELINE_NURSES = 6
 BASELINE_DOCTORS = 13
 #Run everything
-rep_df = run_multiple_replications(n_reps=30, n_nurses=BASELINE_NURSES, n_doctors=BASELINE_DOCTORS)
+rep_df, patients_df = run_multiple_replications(n_reps=30, n_nurses=BASELINE_NURSES, n_doctors=BASELINE_DOCTORS)
 summarise_replications(rep_df)

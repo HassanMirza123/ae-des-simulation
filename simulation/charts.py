@@ -74,3 +74,44 @@ def utilisation_chart(rep_df):
     )
 
     return fig
+
+def patient_time_histogram(patients_df):
+
+    fig = go.Figure()
+
+    discharged = patients_df[patients_df['is_admitted'] == False]
+    fig.add_trace(go.Histogram(
+        x=discharged['total_min'],
+        name='Discharged',
+        marker_color='light blue',
+        opacity=0.7,
+        xbins=dict(size=15)    #15 mins per bar
+    ))
+
+    admitted = patients_df[patients_df['is_admitted'] == True]
+    fig.add_trace(go.Histogram(
+        x=admitted['total_min'],
+        name='Admitted',
+        marker_color='red',
+        opacity=0.7,
+        xbins=dict(size=15)
+    ))
+
+    #The 4-hour breach line + everything to right is breach
+    fig.add_vline(
+        x=240,
+        line_dash="dash",
+        line_color="red",
+        annotation_text="4-hour target (240 min)",
+        annotation_position="top right"
+    )
+
+    fig.update_layout(
+        barmode='overlay',     # bars overlap so both are visible
+        xaxis_title="Total Time in A&E (minutes)",
+        yaxis_title="Number of Patients",height=400,
+        legend=dict(orientation="h",yanchor="bottom",y=1.02,xanchor="right",x=1
+        )
+    )
+
+    return fig

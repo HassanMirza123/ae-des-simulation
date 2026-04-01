@@ -8,7 +8,7 @@ from scipy import stats
 #Path for simulation file
 sys.path.append(os.path.join(os.path.dirname(__file__), 'simulation'))
 from model import run_multiple_replications
-from charts import breach_rate_chart, utilisation_chart
+from charts import breach_rate_chart, utilisation_chart, patient_time_histogram
 
 
 
@@ -41,7 +41,7 @@ run_button = st.sidebar.button("▶ Run Simulation", type="primary")
 #Once buttons clicked, run reps and output metrics
 if run_button:
     with st.spinner("Running the Sim"):
-        rep_df = run_multiple_replications(n_reps=n_reps, n_nurses=n_nurses, n_doctors=n_doctors)
+        rep_df,patients_df = run_multiple_replications(n_reps=n_reps, n_nurses=n_nurses, n_doctors=n_doctors)
     
     #Metrics
     st.subheader("Results")
@@ -81,3 +81,7 @@ if run_button:
 
     st.subheader("Resource Utilisation")
     st.plotly_chart(utilisation_chart(rep_df), use_container_width=True)
+
+    st.subheader("Patient Time Distribution")
+    st.caption("Distribution of total time in A&E per patient across all reps. Everything to the right of red line is a 4 hour breach")
+    st.plotly_chart(patient_time_histogram(patients_df), use_container_width=True)
