@@ -8,6 +8,9 @@ from scipy import stats
 #Path for simulation file
 sys.path.append(os.path.join(os.path.dirname(__file__), 'simulation'))
 from model import run_multiple_replications
+from charts import breach_rate_chart, utilisation_chart
+
+
 
 st.set_page_config(
     page_title="A&E Decision Support",layout="wide"
@@ -73,4 +76,8 @@ if run_button:
         delta_color="off"
     )
 
+    st.subheader("4-Hour Breach Rate")
+    st.plotly_chart(breach_rate_chart(rep_df, BASELINE_BREACH_RATE),use_container_width=True)
 
+    st.subheader("Resource Utilisation")
+    st.plotly_chart(utilisation_chart(rep_df), use_container_width=True)
