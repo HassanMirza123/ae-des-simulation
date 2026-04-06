@@ -10,6 +10,34 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'simulation'))
 from model import run_multiple_replications
 from charts import breach_rate_chart, utilisation_chart, patient_time_histogram
 
+#This is to generate information based on the output of the simulation
+def generate_info(breach_mean):
+    #So we get output values from the sim and this func will return English interpretation
+    info = []
+
+    #Breaches
+    if breach_mean <=5:
+        info.append(('success',
+            f"The 4 hour breach rate is very low at {breach_mean:.1f}% "
+            f"The department is easily meeting the NHS target. "
+            f"Current staffing levels are sufficient for this demand level."))
+    elif breach_mean <=20:
+        info.append(('success',
+            f"The 4 hour breach rate is {breach_mean:.1f}%, this remains "
+            f"consistent with the dataset baseline of 19.9% "
+            f"Current performance is in an acceptable range with current staffing"))
+    elif breach_mean <=35:
+        info.append(('warning',
+            f"The 4 hour breach rate is {breach_mean:.1f}%, which "
+            f"**exceeds** the dataset baseline of 19.9%. A large number of patients "
+            f"are waiting longer than the NHS target. Please increase staffing"))
+    else:
+        info.append(('error',
+            f"The 4 hour breach rate is {breach_mean:.1f}% "
+            f"The department is under serious pressure. "
+            f"Staffing must be reviewed."))
+    return info
+
 
 
 st.set_page_config(
@@ -85,3 +113,18 @@ if run_button:
     st.subheader("Patient Time Distribution")
     st.caption("Distribution of total time in A&E per patient across all reps. Everything to the right of red line is a 4 hour breach")
     st.plotly_chart(patient_time_histogram(patients_df), use_container_width=True)
+
+    #Text info generation
+    st.markdown("---")
+    st.subheader("What do these results mean?")
+
+    information = generate_info(
+        breach_mean=breach_mean
+    )
+    for level, info in information:
+        if level== 'success':
+            st.success(info)
+        elif level== 'warning':
+            st.warning(info)
+        elif level== 'error':
+            st.error(info)
