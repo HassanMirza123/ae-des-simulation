@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import pandas as pd
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'simulation'))
 from model import run_multiple_replications
@@ -38,9 +39,13 @@ if st.button("Run scenarios"):
                                          n_doctors=params["n_doctors"])
     st.subheader("Results")
 
+    #Summary metric table to clean up
+    table = []
     for name, metrics in results.items():
-        st.markdown(f"{name}")
-        st.write(f"Breach rate: {metrics['breach_rate']:.1f}%")
-        st.write(f"Mean time in A&E: {metrics['mean_total_time']:.1f} min")
-        st.write(f"Doctor utilisation: {metrics['doctor_util']:.1f}%")
-        st.write(f"Nurse utilisation: {metrics['nurse_util']:.1f}%")
+        table.append({"Scenario": name,
+                      "Breach Rate (%)": round(metrics["breach_rate"],1),
+                      "Mean Time in A&E (min)": round(metrics["mean_total_time"],1),
+                      "Doctor Utilisation (%)": round(metrics["doctor_util"], 1),
+                      "Nurse Utilisation (%)": round(metrics["nurse_util"], 1)})
+    results_df = pd.DataFrame(table)
+    st.dataframe(results, use_container_width=True)
