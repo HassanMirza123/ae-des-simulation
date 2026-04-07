@@ -20,7 +20,7 @@ N_REPS = 30
 
 #func for the diff scenarios
 def run_scenario(n_nurses,n_doctors,n_reps=N_REPS):
-    rep_df = run_multiple_replications(n_reps=n_reps,
+    rep_df, patients_df = run_multiple_replications(n_reps=n_reps,
                                        n_nurses=n_nurses,
                                        n_doctors=n_doctors)
     return {
