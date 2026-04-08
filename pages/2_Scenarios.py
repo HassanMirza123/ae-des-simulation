@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import sys
 import pandas as pd
+import plotly.graph_objects as go
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'simulation'))
 from model import run_multiple_replications
@@ -31,6 +32,15 @@ def run_scenario(n_nurses,n_doctors,n_reps=N_REPS):
         "nurse_util": rep_df["triage_util_mean"].mean() * 100
     }
 
+def comparison_bar(results, metric, y):
+    scenario_names= list(results.keys())
+    values= [results[name][metric] for name in scenario_names]
+
+    bar = go.Figure()
+    bar.add_trace(go.Bar(x=scenario_names, y=values, textposition="outside"))
+    bar.update_layout(yaxis_title=y,showlegend=False,height=400)
+    return bar
+
 if st.button("Run scenarios"):
     results = {}
     with st.spinner("Running scenarios... (Please allow some time)"):
@@ -49,3 +59,6 @@ if st.button("Run scenarios"):
                       "Nurse Utilisation (%)": round(metrics["nurse_util"], 1)})
     results_df = pd.DataFrame(table)
     st.dataframe(results, use_container_width=True)
+
+    st.subheader("Breach Rate Comparison")
+    st.plotly_chart(comparison_bar(results,"breach_rate", "Breach Rate %"), use_container_width=True)
