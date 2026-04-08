@@ -94,14 +94,36 @@ if st.session_state.get('predefined_results'):
     st.dataframe(results_df, use_container_width=True)
 
     #The comparison bar charts
+    #making it so it reads as two charts, then two charts underneath rather than 4 in one line
+    #maybe I keep this for any other visuals 
     st.subheader("Visual Comparison")
 
-    st.markdown("**4-Hour Breach Rate (%)**")
-    st.plotly_chart(
-        comparison_bar(results, "breach_mean", "Breach Rate (%)",
-                        reference_line=19.9, reference_label="Dataset target: 19.9%"),use_container_width=True
-    )
-
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**4-Hour Breach Rate %**")
+        st.plotly_chart(
+            comparison_bar(results, "breach_mean", "Breach Rate %",
+                           reference_line=19.9, reference_label="Dataset target: 19.9%"),use_container_width=True
+        )
+    with col2:
+        st.markdown("**Mean Time in A&E mins**")
+        st.plotly_chart(
+            comparison_bar(results, "total_mean", "Mean Time min",
+                           reference_line=240, reference_label="4-hour target: 240 min"), use_container_width=True
+        )
+    col3, col4 = st.columns(2)
+    with col3:
+        st.markdown("**Doctor Utilisation %**")
+        st.plotly_chart(
+            comparison_bar(results, "doctor_mean", "Doctor Utilisation %",
+                           reference_line=85, reference_label="Pressure threshold: 85%"), use_container_width=True
+        )
+    with col4:
+        st.markdown("**Nurse Utilisation %**")
+        st.plotly_chart(
+            comparison_bar(results, "nurse_mean", "Nurse Utilisation %",
+                           reference_line=85,reference_label="Pressure threshold: 85%"), use_container_width=True
+        )
 #Users scenario - TODO make it so a user can add their own scenario to the existing chart. their own version is saved in session_state
 #so like if sim was already run with diff params to baseline, get the results of whatever metric you are looking at and add that to the visuals
 #if there was no run with diff params, tell user to run before you add custom scenario
