@@ -124,9 +124,41 @@ if st.session_state.get('predefined_results'):
             comparison_bar(results, "nurse_mean", "Nurse Utilisation %",
                            reference_line=85,reference_label="Pressure threshold: 85%"), use_container_width=True
         )
-#Users scenario - TODO make it so a user can add their own scenario to the existing chart. their own version is saved in session_state
-#so like if sim was already run with diff params to baseline, get the results of whatever metric you are looking at and add that to the visuals
-#if there was no run with diff params, tell user to run before you add custom scenario
-#so theres the flag in 1_simulation.py to check if a sim is run, we use that, if run then go ahead and add the saved nurses and doctors
+#Users scenario
+#for now it works as finding saved settings, using saved settings and rerunning chart to add users scenraio
+#logic seems like its working? Check fully tomorrow
 st.markdown("---")
 st.subheader("Add your own scneario")
+
+if st.session_state.get('sim_run'):
+    saved_nurses = st.session_state['sim_nurses']
+    saved_doctors = st.session_state['sim_doctors']
+
+    st.success(
+        f"Simulation page settings found: {saved_nurses} nurses, {saved_doctors} doctors."
+    )
+    saved = st.button(
+        f"Add Simulation Page Scenario ({saved_nurses}N / {saved_doctors}D)", type="primary"
+    )
+    if saved:
+        if not st.session_state.get('predefined_results'):
+            st.warning("Please run the predefined scenarios first before adding a custom scenario")
+        else:
+            with st.spinner("Running your scenario..."):
+                user_result = run_scenario(n_nurses=saved_nurses, n_doctors=saved_doctors)
+                user_label = f"Your scenario ({saved_nurses}N&{saved_doctors}D)"
+                #user result getst merged into existing predefined one
+                all_results  = dict(st.session_state['predefined_results'])
+                all_results[user_label] = user_result
+                st.session_state['predefined_results'] = all_results
+                #wlil rerun the charts to add the users scenario to it
+                st.rerun()
+
+else:
+    #No changes run on the sim page
+    st.info(
+        "No custom configuration found. Visit the Simulation page first, adjust the sliders to your desired staffing level, and click Run then come back here to add it to the comparison"
+    )
+    #takes back to sim page
+    if st.button("Go to Simulation page"):
+        st.switch_page("pages/1_Simulation.py")

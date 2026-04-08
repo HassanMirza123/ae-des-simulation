@@ -105,7 +105,7 @@ n_doctors = st.sidebar.slider(
 )
 
 n_reps = st.sidebar.slider(
-    label="Replications (higher = more accurate, but slower)",min_value=5,max_value=30,value=10
+    label="Replications (higher = more accurate, but slower)",min_value=5,max_value=30,value=30
 )
 
 run_button = st.sidebar.button("▶ Run Simulation", type="primary")
