@@ -131,6 +131,7 @@ if run_button:
     BASELINE_DOC_UTIL = 68.8 #%
     BASELINE_ADMISSION = 14.5 #%
 
+    #each column shows a metric and its difference from baseline
     c1.metric(
         label="4 hour breach rate", value=f"{breach_mean:.1f}%", delta=f"{breach_mean - BASELINE_BREACH_RATE:.1f}% vs baseline",
         delta_color="inverse"
@@ -148,6 +149,7 @@ if run_button:
         delta_color="off"
     )
 
+    #Showing the charts from funcs in charts.py
     st.subheader("4-Hour Breach Rate")
     st.plotly_chart(breach_rate_chart(rep_df, BASELINE_BREACH_RATE),use_container_width=True)
 
