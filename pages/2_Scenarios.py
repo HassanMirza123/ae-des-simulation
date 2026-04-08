@@ -40,21 +40,25 @@ def run_scenario(n_nurses,n_doctors,n_reps=N_REPS):
     total_mean, to_mean_lo, to_mean_hi =mean_conf_int(rep_df["mean_total_time"])
     doc_mean, doc_lo, doc_hi= mean_conf_int(rep_df["doctor_util_mean"]* 100)
     nur_mean, nur_lo, nur_hi=mean_conf_int(rep_df["triage_util_mean"] * 100)
+    adm_mean,_,_=mean_conf_int(rep_df['admission_rate']*100)
 
     return{
         "breach_mean":breach_mean, "breach_lo": br_lo, "breach_hi": br_hi,
         "total_mean":total_mean,"total_lo":to_mean_lo,"total_hi":to_mean_hi,
         "doctor_mean":doc_mean, "doctor_lo":doc_lo,"doctor_hi":doc_hi,
-        "nurse_mean":nur_mean,"nurse_lo":nur_lo,"nurse_hi":nur_hi
+        "nurse_mean":nur_mean,"nurse_lo":nur_lo,"nurse_hi":nur_hi,
+        'adm_mean':adm_mean
     }
     
 #The bar chart for comparison, eventaully move func into charts.py once working
-def comparison_bar(results, metric, y):
+def comparison_bar(results, metric, y, reference_line=None, reference_label=None):
     scenario_names= list(results.keys())
     values= [results[name][metric] for name in scenario_names]
 
     bar = go.Figure()
-    bar.add_trace(go.Bar(x=scenario_names, y=values, textposition="outside"))
+    bar.add_trace(go.Bar(x=scenario_names, y=values,textposition="outside", width=0.5))
+    if reference_line is not None:
+        bar.add_hline(y=reference_line,line_dash="dash", line_color="red", annotation_text= reference_label, annotation_position="top right")
     bar.update_layout(yaxis_title=y,showlegend=False,height=400)
     return bar
 
@@ -64,6 +68,12 @@ if st.button("Run scenarios"):
         for name, params in SCENARIOS.items():
             results[name] = run_scenario(n_nurses=params["n_nurses"],
                                          n_doctors=params["n_doctors"])
+            
+    #saving results to current session state so can be used across pages
+    st.session_state['predefined_results'] = results
+#Display results
+if st.session_state.get('predefined_results'):
+    results= st.session_state['predefined_results']
     st.subheader("Results")
 
     #Summary metric table to clean up
@@ -71,15 +81,30 @@ if st.button("Run scenarios"):
     for name, metrics in results.items():
         table.append({"Scenario": name,
                       "Breach Rate (%)": round(metrics["breach_mean"],1),
-                      "Breach Confidence Interval Low": round(metrics["breach_lo"],1),
-                      "Breach Confidence Interval High": round(metrics["breach_hi"],1),
+                      "Breach CI Low": round(metrics["breach_lo"],1),
+                      "Breach CI High": round(metrics["breach_hi"],1),
                       "Mean Time in A&E (min)": round(metrics["total_mean"],1),
-                      "Mean Time Confidence Interval Low": round(metrics["total_lo"],1),
-                      "Mean Time Confidence Interval High": round(metrics["total_hi"],1),
+                      "Time CI Low": round(metrics["total_lo"],1),
+                      "Time CI High": round(metrics["total_hi"],1),
                       "Doctor Utilisation (%)": round(metrics["doctor_mean"], 1),
-                      "Nurse Utilisation (%)": round(metrics["nurse_mean"], 1)})
-    results_df = pd.DataFrame(table)
-    st.dataframe(results, use_container_width=True)
+                      "Nurse Utilisation (%)": round(metrics["nurse_mean"], 1),
+                      "Admission Rate (%)": round(metrics['adm_mean'],1)})
+                    
+    results_df = pd.DataFrame(table).set_index("Scenario")
+    st.dataframe(results_df, use_container_width=True)
 
-    st.subheader("Breach Rate Comparison")
-    st.plotly_chart(comparison_bar(results,"breach_mean", "Breach Rate %"), use_container_width=True)
+    #The comparison bar charts
+    st.subheader("Visual Comparison")
+
+    st.markdown("**4-Hour Breach Rate (%)**")
+    st.plotly_chart(
+        comparison_bar(results, "breach_mean", "Breach Rate (%)",
+                        reference_line=19.9, reference_label="Dataset target: 19.9%"),use_container_width=True
+    )
+
+#Users scenario - TODO make it so a user can add their own scenario to the existing chart. their own version is saved in session_state
+#so like if sim was already run with diff params to baseline, get the results of whatever metric you are looking at and add that to the visuals
+#if there was no run with diff params, tell user to run before you add custom scenario
+#so theres the flag in 1_simulation.py to check if a sim is run, we use that, if run then go ahead and add the saved nurses and doctors
+st.markdown("---")
+st.subheader("Add your own scneario")
