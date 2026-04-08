@@ -115,6 +115,12 @@ if run_button:
     with st.spinner("Running the Sim"):
         rep_df,patients_df = run_multiple_replications(n_reps=n_reps, n_nurses=n_nurses, n_doctors=n_doctors)
     
+    #Saving to sesssion state so can be added as scenario in Scenario page
+    #also create flag to see a run ahs occurs
+    st.session_state['sim_nurses'] = n_nurses
+    st.session_state['sim_doctors'] = n_doctors
+    st.session_state['sim_run'] = True
+    
     #Metrics
     st.subheader("Results")
     
