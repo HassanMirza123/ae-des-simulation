@@ -250,8 +250,9 @@ def summarise_replications(rep_df):
     print(f"\nReplications completed: {len(rep_df)}/30")
     print(f"Mean patients per run:  {rep_df['n_completed'].mean():.0f}")
 
-BASELINE_NURSES = 6
-BASELINE_DOCTORS = 13
-#Run everything
-rep_df, patients_df = run_multiple_replications(n_reps=30, n_nurses=BASELINE_NURSES, n_doctors=BASELINE_DOCTORS)
-summarise_replications(rep_df)
+if __name__ == "__main__":
+    BASELINE_NURSES = 6
+    BASELINE_DOCTORS = 13
+    #Run everything
+    rep_df, patients_df = run_multiple_replications(n_reps=30, n_nurses=BASELINE_NURSES, n_doctors=BASELINE_DOCTORS)
+    summarise_replications(rep_df)
