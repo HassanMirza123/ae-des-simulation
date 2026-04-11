@@ -83,7 +83,7 @@ def patient_time_histogram(patients_df):
     fig.add_trace(go.Histogram(
         x=discharged['total_min'],
         name='Discharged',
-        marker_color='light blue',
+        marker_color='lightblue',
         opacity=0.7,
         xbins=dict(size=15)    #15 mins per bar
     ))

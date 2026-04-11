@@ -104,6 +104,39 @@ fig_b.update_layout(
     xaxis_title='Specialty', yaxis_title='Admitted Patients %',
     showlegend=False, height=400)
 
+#chart c los distrubtion same in charts.py but for sim patients
+fig_c = go.Figure()
+
+fig_c.add_trace(go.Histogram(
+    x=discharged[discharged<=600], #drops anyone over 600 mins to remove outliers. excluding them doesnt change distribution shape
+    name='Discharged',
+    marker_color='lightblue',
+    opacity=0.7,
+    xbins=dict(size=15)))
+
+fig_c.add_trace(go.Histogram(
+    x=admitted[admitted<=600], #drops anyone over 600 mins to remove outliers. excluding them doesnt change distribution shape
+    name='Admitted',
+    marker_color='red',
+    opacity=0.7,
+    xbins=dict(size=15)))
+
+#4hour breach line(everything on right is breach)
+fig_c.add_vline(
+    x=240,
+    line_dash='dash',
+    line_color='black',
+    annotation_text='4 hour target (240 min)',
+    annotation_position='top right')
+
+fig_c.update_layout(
+    title='Length of Stay Distribution',
+    barmode='overlay',
+    xaxis_title='Time in A&E (minutes, capped at 600)',
+    yaxis_title='Number of Visits',
+    height=400,
+    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
+
 path_a = os.path.join(OUTPUT_DIR, 'chart_a_hourly_arrival_rates.png')
 pio.write_image(fig_a, path_a, width=900, height=450)
 print(f"Saved: {path_a}")
@@ -111,3 +144,7 @@ print(f"Saved: {path_a}")
 path_b = os.path.join(OUTPUT_DIR,'chart_b_specialty.png')
 pio.write_image(fig_b, path_b, width = 900, height=450)
 print(f"Saved: {path_b}")
+
+path_c = os.path.join(OUTPUT_DIR,'chart_c_los_dist.png')
+pio.write_image(fig_c, path_c, width = 900, height=450)
+print(f"Saved: {path_c}")
