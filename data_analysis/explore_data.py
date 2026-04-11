@@ -92,6 +92,22 @@ fig_a.update_layout(
     legend=dict(orientation='h', yanchor='bottom', y=1.02,xanchor='right', x=1),
     height=420)
 
+#chart b to show which specialties patients go - didn't end up using this in the simulation (improvement for future)
+fig_b = go.Figure()
+
+fig_b.add_trace(go.Bar(
+    x=list(specialty_props.index), y=list(specialty_props.values*100),
+    marker_color=['red','green','blue','yellow'],
+    text=[f"{p*100:.1f}%" for p in specialty_props.values], textposition='outside'))
+
+fig_b.update_layout(
+    xaxis_title='Specialty', yaxis_title='Admitted Patients %',
+    showlegend=False, height=400)
+
 path_a = os.path.join(OUTPUT_DIR, 'chart_a_hourly_arrival_rates.png')
 pio.write_image(fig_a, path_a, width=900, height=450)
 print(f"Saved: {path_a}")
+
+path_b = os.path.join(OUTPUT_DIR,'chart_b_specialty.png')
+pio.write_image(fig_b, path_b, width = 900, height=450)
+print(f"Saved: {path_b}")
