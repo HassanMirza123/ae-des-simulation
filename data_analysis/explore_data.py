@@ -137,6 +137,28 @@ fig_c.update_layout(
     height=400,
     legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
 
+#chart d admission rates based on triage category
+triagecolours = ['Red','Orange','Yellow','Green','Blue']
+triagelabels= ['Red\n(Immediate)', 'Orange\n(Very Urgent)', 'Yellow\n(Urgent)', 'Green\n(Standard)', 'Blue\n(Non-Urgent)']
+barcolours=['red', 'orange', 'yellow', 'green', 'blue']
+adm_rates=[]
+
+for colour in triagecolours:
+    x = per_visit[per_visit['triage'] == colour]
+    adm_rates.append(x['is_admitted'].mean()*100 if len(x) > 0 else 0)
+
+fig_d = go.Figure()
+
+fig_d.add_trace(go.Bar(
+    x=triagelabels, y= adm_rates, marker_color=barcolours,
+    text=[f"{r:.1f}%" for r in adm_rates], textposition='outside'))
+
+fig_d.update_layout(
+    xaxis_title='Triage Cat (Manchester Triage System)',
+    yaxis_title='Admission Rate %', yaxis=dict(range=[0,55]),
+    title='Admission Rate by Triage Category',
+    showlegend=False, height=400)
+
 path_a = os.path.join(OUTPUT_DIR, 'chart_a_hourly_arrival_rates.png')
 pio.write_image(fig_a, path_a, width=900, height=450)
 print(f"Saved: {path_a}")
@@ -148,3 +170,7 @@ print(f"Saved: {path_b}")
 path_c = os.path.join(OUTPUT_DIR,'chart_c_los_dist.png')
 pio.write_image(fig_c, path_c, width = 900, height=450)
 print(f"Saved: {path_c}")
+
+path_d = os.path.join(OUTPUT_DIR,'chart_d_adm_rate_triage.png')
+pio.write_image(fig_d,path_d,width=900, height=450)
+print(f"Saved: {path_d}")

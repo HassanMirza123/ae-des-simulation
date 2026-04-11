@@ -33,8 +33,8 @@ admission_rate = 0.126  #figure from ed_visits 12.6% of patients admitted
 total_hourly_rates = [r / admission_rate for r in admit_hourly_rates]
 
 ADMISSION_PROB = {
-    'urgent':       0.32, #~32% of urgent patients admitted
-    'non_urgent':   0.06  #~6% of non-urgent patients admitted
+    'urgent':       0.32, #Given that a patient is urgent, ~32% will be admitted
+    'non_urgent':   0.06  #Given that a patient is non urgent, ~6% will be admitted
 }
 
 #Mean time in A&E before ward transfer - taken form ed_visits
@@ -89,7 +89,7 @@ def patient(env, patient_id, triage_nurse, doctor, results):
     #Stage 3: Admitted or Dishcarged?
     #Decide whether patient is admitted based on triage acuity
     #Probability comes from ed_visits analysis
-    admission_prob = ADMISSION_PROB[urgency]
+    admission_prob = ADMISSION_PROB[urgency] #picks 0.32 or 0.06
     is_admitted    = random.random() < admission_prob
     
     if is_admitted:
@@ -142,19 +142,18 @@ def patient_arrivals(env, triage_nurse, doctor, results):
         inter_arrival = random.expovariate(rate_per_min)
         yield env.timeout(inter_arrival)
 
-
-def run_simulation(n_nurses=2, n_doctors=2, sim_duration=1440):
-    #1440 minutes means 24 hours - 1 full simulated day
-    env     = simpy.Environment()
-    #PriorityResource instead of Resource
-    #capacity is how many patients can be served simultaneously
-    triage_nurse = simpy.PriorityResource(env, capacity=n_nurses)
-    doctor       = simpy.PriorityResource(env, capacity=n_doctors)
-    results = []
-    env.process(patient_arrivals(env, triage_nurse, doctor, results))
-    env.run(until=sim_duration)
+# def run_simulation(n_nurses=2, n_doctors=2, sim_duration=1440):
+#     #1440 minutes means 24 hours - 1 full simulated day
+#     env     = simpy.Environment()
+#     #PriorityResource instead of Resource
+#     #capacity is how many patients can be served simultaneously
+#     triage_nurse = simpy.PriorityResource(env, capacity=n_nurses)
+#     doctor       = simpy.PriorityResource(env, capacity=n_doctors)
+#     results = []
+#     env.process(patient_arrivals(env, triage_nurse, doctor, results))
+#     env.run(until=sim_duration)
     
-    return pd.DataFrame(results)
+#     return pd.DataFrame(results)
 
 #Baseline staffing for the simulation
 #These values were chosen by calibrating the model against the main summary results from ed_visits.csv.
