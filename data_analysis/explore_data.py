@@ -1,6 +1,12 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import plotly.io as pio
+import os
+
+#creating outputs folder
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'outputs')
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 #Loading datasets
 arrivals = pd.read_csv('data/inpatient_arrivals.csv')
@@ -21,6 +27,7 @@ n_days = arrivals['date'].nunique()
 hourly_rates = arrivals.groupby('hour').size() / n_days
 print("Hourly admitted arrival rates (patients per hour)")
 print(hourly_rates.round(3).to_string())
+
 
 #Routing through diff specialties (Medicine,)
 specialty_props = arrivals['specialty'].value_counts(normalize=True)
@@ -58,3 +65,33 @@ print(f"MEAN_LOS_DISCHARGED = {discharged.mean():.1f}")
 print(f"BASELINE_BREACH_RATE = {(per_visit['max_los']>240).mean():.3f}")
 rates_list = [round(hourly_rates.get(h, 0), 3) for h in range(24)]
 print(f"\nADMITTED_HOURLY_RATES = {rates_list}")
+
+#charts
+#using admission rate from per_visit analysis above
+admission_rate = per_visit['is_admitted'].mean()
+total_rates = hourly_rates/admission_rate
+
+#chart a to show raw and mine follow same pattern
+fig_a = go.Figure()
+
+#line for what we will use in sim
+fig_a.add_trace(go.Scatter(
+    x=list(range(24)), y=list(total_rates),
+    name='Estimated total A&E arrivals per hour',
+    fill='tozeroy', mode='lines+markers', fillcolor='rgba(179,226,205,0.5)'))
+
+#line for dataset values
+fig_a.add_trace(go.Scatter(
+    x=list(range(24)), y=list(hourly_rates),
+    mode='lines+markers', line=dict(color='red', width=1.5, dash='dot'), marker=dict(size=5),
+    name='Admitted patients per hour (raw data)'))
+
+fig_a.update_layout(
+    title='Empirical Hourly Arrival Rate - inpatient_arrivals.csv',
+    xaxis_title='Hour of Day', yaxis_title='Mean Patients per Hour', xaxis=dict(tickmode='linear', tick0=0, dtick=2),
+    legend=dict(orientation='h', yanchor='bottom', y=1.02,xanchor='right', x=1),
+    height=420)
+
+path_a = os.path.join(OUTPUT_DIR, 'chart_a_hourly_arrival_rates.png')
+pio.write_image(fig_a, path_a, width=900, height=450)
+print(f"Saved: {path_a}")
