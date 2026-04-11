@@ -14,6 +14,9 @@ arrivals['arrival_datetime'] = pd.to_datetime(
     arrivals['arrival_datetime'], utc=True
 )
 
+print("A&E DES - Exploratory Data Analysis")
+print("UCL-CORU patientflow dataset (Zenodo, 2025)")
+
 ed = pd.read_csv('data/ed_visits.csv')
 #New column for LOS in mins
 ed['los_minutes'] = ed['elapsed_los'] / 60
@@ -102,6 +105,7 @@ fig_b.add_trace(go.Bar(
 
 fig_b.update_layout(
     xaxis_title='Specialty', yaxis_title='Admitted Patients %',
+    title='Specialty Routing Proportions',
     showlegend=False, height=400)
 
 #chart c los distrubtion same in charts.py but for sim patients
@@ -130,7 +134,7 @@ fig_c.add_vline(
     annotation_position='top right')
 
 fig_c.update_layout(
-    title='Length of Stay Distribution',
+    title='Length of Stay Distribution (Real Data)',
     barmode='overlay',
     xaxis_title='Time in A&E (minutes, capped at 600)',
     yaxis_title='Number of Visits',
@@ -174,3 +178,31 @@ print(f"Saved: {path_c}")
 path_d = os.path.join(OUTPUT_DIR,'chart_d_adm_rate_triage.png')
 pio.write_image(fig_d,path_d,width=900, height=450)
 print(f"Saved: {path_d}")
+
+#Summary tables, recreate in excel to appendix in report
+#Hourly rates table
+hourly_rates_table = pd.DataFrame({
+    'Hour':list(range(24)),
+    'Admitted_per_hour':[round(hourly_rates.get(h,0),3) for h in range(24)],
+    'Total_est_per_hour':[round(hourly_rates.get(h,0)/admission_rate,3) for h in range(24)]})
+
+#Triage table
+triage_rows= []
+for colour in ['Red','Orange','Yellow','Green','Blue']:
+    x = per_visit[per_visit['triage'] == colour]
+    if len(x)>0:
+        triage_rows.append({'Triage':colour,
+                            'n_patients': len(x),
+                            'admission_rate': round(x['is_admitted'].mean()*100,1),
+                            'mean_los_min': round(x['max_los'].mean(),1)})
+
+triage_table= pd.DataFrame(triage_rows)
+
+
+path_rates = os.path.join(OUTPUT_DIR, 'table_a_hourly_rates.csv')
+hourly_rates_table.to_csv(path_rates, index=False)
+print(f"Saved: {path_rates}")
+
+path_triage  = os.path.join(OUTPUT_DIR, 'table_b_triage_summary.csv')
+triage_table.to_csv(path_triage, index=False)
+print(f"Saved: {path_triage}")

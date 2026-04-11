@@ -1,0 +1,6 @@
+Triage,n_patients,admission_rate,mean_los_min
+Red,162,42.0,222.5
+Orange,11192,32.2,225.7
+Yellow,30765,18.0,214.3
+Green,43997,5.8,144.3
+Blue,3133,1.8,105.6
