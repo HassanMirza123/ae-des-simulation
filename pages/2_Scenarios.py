@@ -16,7 +16,7 @@ st.title("Scenario Comparison")
 st.write("Run a few predefined staffing scenarios and compare the main results")
 
 SCENARIOS = {
-    "Baseline": {"n_nurses": 6, "n_doctors": 13},
+    "Baseline": {"n_nurses": 6, "n_doctors": 12},
     "Less Staff":{"n_nurses": 4, "n_doctors": 9},
     "More Capacity":{"n_nurses": 8, "n_doctors": 16}
 }

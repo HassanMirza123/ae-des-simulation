@@ -167,8 +167,8 @@ def patient_arrivals(env, triage_nurse, doctor, results):
 
 #Data source: UCL-CORU patientflow dataset on Zenodo
 
-def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
-                               sim_duration=1440):
+def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=13,
+                               sim_duration=1440, warm_up=1440):
     #Run model several times with diff seeds so the results not based on single random run
     replication_summaries = []
     all_patients = [] #collecting every patient
@@ -190,9 +190,15 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
         env.process(monitor_resources(env, triage_nurse, doctor, triage_util, doctor_util, interval=30
         ))
 
-        env.run(until=sim_duration)
+        env.run(until=warm_up + sim_duration)
 
         df = pd.DataFrame(results)
+        
+        if len(df) < 10:
+            continue
+        
+        #to keep only patients arriving after warm up period. Patients during warm up are discarded
+        df=df[df['arrival_min'] >= warm_up].copy()
 
         #Ignore runs if almost nobody completed (means the queue overloaded)
         if len(df) < 10:
@@ -204,6 +210,9 @@ def run_multiple_replications(n_reps=30, n_nurses=6, n_doctors=11,
         #Convert utilisation snapshots into Df
         triage_util_df = pd.DataFrame(triage_util)
         doctor_util_df = pd.DataFrame(doctor_util)
+
+        triage_util_df = triage_util_df[triage_util_df['time'] >= warm_up]
+        doctor_util_df = doctor_util_df[doctor_util_df['time'] >= warm_up]
 
         replication_summaries.append({
             'seed':              seed,
@@ -251,7 +260,7 @@ def summarise_replications(rep_df):
 
 if __name__ == "__main__":
     BASELINE_NURSES = 6
-    BASELINE_DOCTORS = 13
+    BASELINE_DOCTORS = 12
     #Run everything
     rep_df, patients_df = run_multiple_replications(n_reps=30, n_nurses=BASELINE_NURSES, n_doctors=BASELINE_DOCTORS)
     summarise_replications(rep_df)

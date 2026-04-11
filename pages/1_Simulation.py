@@ -21,7 +21,7 @@ def generate_info(breach_mean, doc_util, triage_util, total_mean, adm_rate, n_nu
             f"The 4 hour breach rate is very low at {breach_mean:.1f}% "
             f"The department is easily meeting the NHS target. "
             f"Current staffing levels are sufficient for this demand level."))
-    elif breach_mean <=20:
+    elif breach_mean <=23:
         info.append(('success',
             f"The 4 hour breach rate is {breach_mean:.1f}%, this remains "
             f"consistent with the dataset baseline of 19.9% "
@@ -92,20 +92,21 @@ st.title("A&E Discrete Event Simulation")
 st.markdown("Explores how changes to staffing levels affect patient wait times and performance targets.")
 
 #Param sliders on the sidebar
-st.sidebar.header("Change params")
+st.sidebar.header("Change parameters")
 
-st.sidebar.markdown("**Baseline:** 6 nurses, 13 doctors")
+st.sidebar.markdown("**Baseline:** 6 nurses, 12 doctors")
 
 n_nurses = st.sidebar.slider(
     label="Number of Triage Nurses", min_value=1, max_value=15, value=6, step=1
 )
 
 n_doctors = st.sidebar.slider(
-    label="Number of Doctors", min_value=1, max_value=25, value=13, step=1
+    label="Number of Doctors", min_value=1, max_value=25, value=12, step=1
 )
 
 n_reps = st.sidebar.slider(
-    label="Replications (higher = more accurate, but slower)",min_value=5,max_value=30,value=30
+    label="Replications (higher = more accurate, but slower)",min_value=5,max_value=30,value=30,
+    help="30 replications is the recommended minimum for statistically valid confidence intervals (Central Limit Theorem). Lower values run fast but produce wider uncertainty ranges"
 )
 
 run_button = st.sidebar.button("▶ Run Simulation", type="primary")
@@ -131,11 +132,18 @@ if run_button:
     doc_util =rep_df['doctor_util_mean'].mean()*100
     adm_rate =rep_df['admission_rate'].mean()*100
 
-    #Baseline results from 6 nurses, 13 docs, 30 reps
-    BASELINE_BREACH_RATE = 17.4 #%
-    BASELINE_TOTAL_TIME = 130.3 #min
-    BASELINE_DOC_UTIL = 68.8 #%
-    BASELINE_ADMISSION = 14.5 #%
+    #Old Baseline - no warm up period
+    # #Baseline results from 6 nurses, 13 docs, 30 reps
+    # BASELINE_BREACH_RATE = 17.4 #%
+    # BASELINE_TOTAL_TIME = 130.3 #min
+    # BASELINE_DOC_UTIL = 68.8 #%
+    # BASELINE_ADMISSION = 14.5 #%
+
+    #Recalibrated baseline results from 6 nurses, 12 doctors, 30 reps, with warm up period
+    BASELINE_BREACH_RATE= 21.6
+    BASELINE_TOTAL_TIME = 142.4
+    BASELINE_DOC_UTIL = 81.0
+    BASELINE_ADMISSION = 14.3
 
     #each column shows a metric and its difference from baseline
     c1.metric(
@@ -147,7 +155,7 @@ if run_button:
         delta_color="inverse"
     )
     c3.metric(
-        label="Dcotor utilisation", value=f"{doc_util:.1f}%", delta=f"{doc_util - BASELINE_DOC_UTIL:.1f}% vs baseline",
+        label="Doctor utilisation", value=f"{doc_util:.1f}%", delta=f"{doc_util - BASELINE_DOC_UTIL:.1f}% vs baseline",
         delta_color="inverse"
     )
     c4.metric(
