@@ -47,6 +47,8 @@ ae-des-simulation/
 ├── requirements.txt
 ```
 
+---
+
 ## Installation
 
 These instructions assume you have Python 3.10 or later installed on your machine.
@@ -54,7 +56,7 @@ All commands should be typed into your terminal or Command Prompt
 
 **Step 1 - Navigate to the project folder**
 
-Unzip the submission and open a terminal inside the unzipped folder.
+Unzip the submission and open a terminal inside the unzipped folder. (Navigate to folder location in terminal)
 You should be in the same directory as `Home.py`
 
 **Step 2 - Create a virtual environment**
@@ -102,13 +104,6 @@ If it doesn't, open your browser and navigate to that address manually
 
 If you close out of the browser page. Enter Ctrl + C in the terminal to interrupt
 
-
----
-
-## Visibility Options
-
-You are able to change between Light and Dark mode. (Dark mode is recommended)
-To do this, navigate to the ellipsis/more options menu button in the top right (3 vertically stacked dots) and select Dark mode
 
 ---
 
