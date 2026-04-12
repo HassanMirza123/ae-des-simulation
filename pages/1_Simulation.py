@@ -163,16 +163,24 @@ if run_button:
         delta_color="off"
     )
 
-    #Showing the charts from funcs in charts.py
-    st.subheader("4-Hour Breach Rate")
-    st.plotly_chart(breach_rate_chart(rep_df, BASELINE_BREACH_RATE),use_container_width=True)
+    col_left, col_right = st.columns(2)
 
-    st.subheader("Resource Utilisation")
-    st.plotly_chart(utilisation_chart(rep_df), use_container_width=True)
+    with col_left:
+        st.subheader("4-Hour Breach Rate")
+        st.plotly_chart(breach_rate_chart(rep_df, BASELINE_BREACH_RATE),use_container_width=True)
+
+    with col_right:
+        st.subheader("Resource Utilisation")
+        st.plotly_chart(utilisation_chart(rep_df),use_container_width=True)
 
     st.subheader("Patient Time Distribution")
-    st.caption("Distribution of total time in A&E per patient across all reps. Everything to the right of red line is a 4 hour breach")
-    st.plotly_chart(patient_time_histogram(patients_df), use_container_width=True)
+    st.caption(
+        "Distribution of total time in A&E per patient across all "
+        "replications. Everything to the right of the red line is a "
+        "4-hour breach."
+    )
+    st.plotly_chart(patient_time_histogram(patients_df),use_container_width=True
+    )
 
     #Text info generation
     st.markdown("---")

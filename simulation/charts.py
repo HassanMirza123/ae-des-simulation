@@ -37,7 +37,7 @@ def breach_rate_chart(rep_df, baseline_breach):
 
     fig.update_layout(
         yaxis_title="Breach Rate (%)",
-        yaxis=dict(range=[0, max(breach_mean_val + error + 5, 40)]), showlegend=False, height=425
+        yaxis=dict(range=[0, max(breach_mean_val + error + 5, 40)]), showlegend=False, height=400
     )
 
     return fig
@@ -70,7 +70,7 @@ def utilisation_chart(rep_df):
 
     fig.update_layout(
         yaxis_title="Mean Utilisation (%)",
-        yaxis=dict(range=[0, 110]), height=350,showlegend=False
+        yaxis=dict(range=[0, 110]), height=400,showlegend=False
     )
 
     return fig
