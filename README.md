@@ -19,7 +19,7 @@ This is a final year Computer Science project at City St George's University of 
 ---
 
 ## Project Structure
-
+```
 ae-des-simulation/
 ├── Home.py                        # Entry point - run this to start the app
 ├── pages/
@@ -45,6 +45,7 @@ ae-des-simulation/
 ├── diagrams/
 │   └── sim_model.png      # Patient flow diagram
 ├── requirements.txt
+```
 
 ## Installation
 
@@ -96,7 +97,7 @@ streamlit run Home.py
 ```
 
 You may be prompted to enter your email. Leave this blank and press the Enter button on your keyboard to get past this
-Your browser will automatically open at `https://localhost:8501`
+Your browser will automatically open at `http://localhost:8501`
 If it doesn't, open your browser and navigate to that address manually
 
 If you close out of the browser page. Enter Ctrl + C in the terminal to interrupt
