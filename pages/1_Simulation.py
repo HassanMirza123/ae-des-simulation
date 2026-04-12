@@ -142,17 +142,14 @@ if run_button:
     st.session_state['sim_nurses'] = n_nurses
     st.session_state['sim_doctors'] = n_doctors
     st.session_state['sim_run'] = True
+    st.session_state['sim_rep_df']= rep_df
+    st.session_state['sim_patients'] = patients_df
     
-    #Metrics
-    st.subheader("Results")
-    
-    c1,c2,c3,c4 = st.columns(4)
-
-    breach_mean =rep_df['breach_rate'].mean()*100
-    total_mean =rep_df['mean_total_time'].mean()
-    doc_util =rep_df['doctor_util_mean'].mean()*100
-    adm_rate =rep_df['admission_rate'].mean()*100
-
+if st.session_state.get('sim_rep_df') is not None:
+ 
+    rep_df      = st.session_state['sim_rep_df']
+    patients_df = st.session_state['sim_patients']
+ 
     #Old Baseline - no warm up period
     # #Baseline results from 6 nurses, 13 docs, 30 reps
     # BASELINE_BREACH_RATE = 17.4 #%
@@ -161,29 +158,46 @@ if run_button:
     # BASELINE_ADMISSION = 14.5 #%
 
     #Recalibrated baseline results from 6 nurses, 12 doctors, 30 reps, with warm up period
-    BASELINE_BREACH_RATE= 21.6
-    BASELINE_TOTAL_TIME = 142.4
-    BASELINE_DOC_UTIL = 81.0
-    BASELINE_ADMISSION = 14.3
-
-    #each column shows a metric and its difference from baseline
+    BASELINE_BREACH_RATE = 21.6
+    BASELINE_TOTAL_TIME  = 142.4
+    BASELINE_DOC_UTIL    = 81.0
+    BASELINE_ADMISSION   = 14.3
+ 
+    breach_mean = rep_df['breach_rate'].mean() * 100
+    total_mean  = rep_df['mean_total_time'].mean()
+    doc_util    = rep_df['doctor_util_mean'].mean() * 100
+    adm_rate    = rep_df['admission_rate'].mean() * 100
+ 
+    #Metrics
+    st.subheader("Results")
+    c1, c2, c3, c4 = st.columns(4)
+ 
     c1.metric(
-        label="4 hour breach rate", value=f"{breach_mean:.1f}%", delta=f"{breach_mean - BASELINE_BREACH_RATE:.1f}% vs baseline",
+        label="4 hour breach rate",
+        value=f"{breach_mean:.1f}%",
+        delta=f"{breach_mean - BASELINE_BREACH_RATE:.1f}% vs baseline",
         delta_color="inverse"
     )
     c2.metric(
-        label="Mean time in A&E", value=f"{total_mean:.0f}min", delta=f"{total_mean - BASELINE_TOTAL_TIME:.0f} min vs baseline",
+        label="Mean time in A&E",
+        value=f"{total_mean:.0f}min",
+        delta=f"{total_mean - BASELINE_TOTAL_TIME:.0f} min vs baseline",
         delta_color="inverse"
     )
     c3.metric(
-        label="Doctor utilisation", value=f"{doc_util:.1f}%", delta=f"{doc_util - BASELINE_DOC_UTIL:.1f}% vs baseline",
+        label="Doctor utilisation",
+        value=f"{doc_util:.1f}%",
+        delta=f"{doc_util - BASELINE_DOC_UTIL:.1f}% vs baseline",
         delta_color="inverse"
     )
     c4.metric(
-        label="Admission rate", value=f"{adm_rate:.1f}%", delta=f"{adm_rate - BASELINE_ADMISSION:.1f}% vs baseline",
+        label="Admission rate",
+        value=f"{adm_rate:.1f}%",
+        delta=f"{adm_rate - BASELINE_ADMISSION:.1f}% vs baseline",
         delta_color="off"
     )
 
+    #Charts
     col_left, col_right = st.columns(2)
 
     with col_left:
