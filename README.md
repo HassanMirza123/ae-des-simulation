@@ -99,6 +99,8 @@ You may be prompted to enter your email. Leave this blank and press the Enter bu
 Your browser will automatically open at `https://localhost:8501`
 If it doesn't, open your browser and navigate to that address manually
 
+If you close out of the browser page. Enter Ctrl + C in the terminal to interrupt
+
 
 ---
 
