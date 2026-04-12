@@ -13,7 +13,10 @@ st.set_page_config(
     page_title="Scenarios - A&E DES", page_icon="🏥", layout="wide")
 
 st.title("Scenario Comparison")
-st.write("Run a few predefined staffing scenarios and compare the main results")
+st.markdown("""This page compares the impact of different staffing configurations. There are 3 predefined scenarios provided so you can see the performance range achievable through staffing changes.
+
+Run the predefined scenarios first, then optionally add your own configuration from the Simulation page to see how it compares
+""")
 
 SCENARIOS = {
     "Baseline": {"n_nurses": 6, "n_doctors": 12},
@@ -124,6 +127,46 @@ if st.session_state.get('predefined_results'):
             comparison_bar(results, "nurse_mean", "Nurse Utilisation %",
                            reference_line=85,reference_label="Pressure threshold: 85%"), use_container_width=True
         )
+
+    #Summary text gen
+    st.markdown("---")
+    st.subheader("Scenario Summary")
+
+    if st.session_state.get('predefined_results'):
+        results   = st.session_state['predefined_results']
+        scenarios = list(results.keys())
+
+        #Find best and worst by breach rate
+        best_name  = scenarios[0] #baseline
+        worst_name = scenarios[0] #baseline
+        
+        #looping through scenarios and update if there is better/worse
+        for name, metrics in results.items():
+            if metrics['breach_mean'] < results[best_name]['breach_mean']:
+                best_name = name
+            if metrics['breach_mean'] > results[worst_name]['breach_mean']:
+                worst_name = name
+
+        best_breach  = results[best_name]['breach_mean']
+        worst_breach = results[worst_name]['breach_mean']
+        best_doc     = results[best_name]['doctor_mean']
+        worst_doc    = results[worst_name]['doctor_mean']
+        breach_diff  = worst_breach - best_breach
+        time_diff    = results[worst_name]['total_mean'] - results[best_name]['total_mean']
+
+        level = 'success' if best_breach <= 23 else 'warning'
+
+        summary = (
+            f"Across the scenarios tested, **{best_name}** produces the best performance with a breach rate of {best_breach:.1f}% and doctor "
+            f"utilisation of {best_doc:.1f}%, compared to **{worst_name}** at {worst_breach:.1f}% breach rate and {worst_doc:.1f}% utilisation. "
+            f"The {breach_diff:.1f} percentage difference in breach rate and {time_diff:.0f} minute difference in mean patient time "
+            f"shows the impact of staffing on performance ")
+
+        if level == 'success':
+            st.success(summary)
+        else:
+            st.warning(summary)
+
 #Users scenario
 #for now it works as finding saved settings, using saved settings and rerunning chart to add users scenraio
 #logic seems like its working? Check fully tomorrow
