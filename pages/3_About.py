@@ -144,11 +144,15 @@ Key parameters derived from the data include:
 - **Treatment time distributions** — separate distributions for urgent and
   non-urgent patients
 - **Admission probabilities** — 32% (urgent) and 6% (non-urgent)
-- **Ward-bed wait times** — median delay applied to admitted patients
+- **Ward-bed wait times** — Exp(mean=45 min)
  
 *If you are using this tool for a specific hospital, the model would need
 recalibrating with local data to produce meaningful results.*
             """)
+        
+        with st.container(border=True):
+            st.markdown('### Patient Flow Diagram')
+            st.image("diagrams/sim_model.png",caption="Conceptual model of A&E patient flow",use_container_width=True)
     
     with col_r:
         with st.container(border=True):
@@ -161,8 +165,7 @@ and competing for shared resources (doctors, nurses).
  
 **Patient pathway:**
 1. **Arrival** — drawn from a time-varying Poisson process
-2. **Triage** — patient waits for a triage nurse; triage duration sampled
-   from a fitted distribution
+2. **Triage** — patient waits for a triage nurse; triage duration drawn from exponential distribution
 3. **Doctor assessment** — patient waits for an available doctor; treatment
    duration depends on acuity (urgent / non-urgent)
 4. **Disposition** — patient is either discharged or, with a probability
