@@ -112,7 +112,7 @@ To do this, navigate to the ellipsis/more options menu button in the top right (
 
 ---
 
-#Running the Data Analysis (Optional)
+## Running the Data Analysis (Optional)
 
 With the virtual environment active, run:
 
@@ -123,3 +123,25 @@ python data_analysis/explore_data.py
 This reads both CSV files from the `data/` folder and saves some outputs into `data_analysis/outputs/`
 
 The zip file contains pre-generated outputs if you prefer not to run the script yourself
+
+---
+
+## Running the Simulation Directly (Optional)
+
+```bash
+python simulation/model.py
+```
+
+Runs 30 baseline replications and prints summary statistics to terminal.
+Expect this to take 20-30 seconds.
+
+---
+
+## Dataset
+
+King, Z., University College London Hospitals NHS Foundation Trust and 
+Crowe, S. (2025). "Patient visits to the Emergency Department of an 
+Acute Hospital; dataset to accompany the patientflow repository". 
+Zenodo. doi:10.5281/zenodo.15311282
+
+Licensed under CC BY-NC-ND 4.0. Included for assessment purposes only.
