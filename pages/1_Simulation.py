@@ -20,65 +20,86 @@ def generate_info(breach_mean, doc_util, triage_util, total_mean, adm_rate, n_nu
         info.append(('success',
             f"The 4 hour breach rate is very low at {breach_mean:.1f}% "
             f"The department is easily meeting the NHS target. "
-            f"Current staffing levels are sufficient for this demand level."))
+            f"Current staffing levels are sufficient for this demand level. Patients are unlikely to experience harmful delays. "
+            f"If cost pressures exist, perhaps reducing staff slightly will be helpful while remaining with performance ranges. "
+            f"Use the scenario comparison page to explore this"))
     elif breach_mean <=23:
         info.append(('success',
             f"The 4 hour breach rate is {breach_mean:.1f}%, this remains "
             f"consistent with the dataset baseline of 19.9% "
-            f"Current performance is in an acceptable range with current staffing"))
+            f"Current performance is in an acceptable range with current staffing. "
+            f"Around 1 in {round(100/breach_mean):.0f} patients will wait longer than 4 hours. This is likely to affect admitted atients awaiting ward transfer rather than discharged patients"))
     elif breach_mean <=35:
         info.append(('warning',
-            f"The 4 hour breach rate is {breach_mean:.1f}%, which "
+            f"The 4 hour breach rate is {breach_mean:.1f}% - approximately {round(breach_mean)} in every 100 patients are waiting beyond the NHS target. This "
             f"**exceeds** the dataset baseline of 19.9%. A large number of patients "
-            f"are waiting longer than the NHS target. Please increase staffing"))
+            f"are waiting longer which increases risk of harm, especially for older and vulnerable patients. Review the utilisation figures to see which resource is the primary driver."))
     else:
         info.append(('error',
-            f"The 4 hour breach rate is {breach_mean:.1f}% "
+            f"The 4 hour breach rate is {breach_mean:.1f}% More than {round(breach_mean)} in every 100 patients are waiting beyond the target "
             f"The department is under serious pressure. "
-            f"Staffing must be reviewed."))
+            f"Staffing must be reviewed. Use the scenario comparison page to model the impact of specific staffing increases before making changes."))
 
     #Doctor Utilisation
     if doc_util >= 90:
         info.append(('error',
             f"Doctor utilisation is critically high at {doc_util:.1f}%. "
-            f"Staff are struggling with surges in demand, increasing waiting times for patients. "
-            f"Please increase the number of doctors!"))
+            f"Staff are struggling with surges in demand, increasing waiting times for patients. The non-linear relationship between utilisation and waiting times means "
+            f"even a small reduction in demand or small increase in capacity produces a large improvement in wait times at this point. "
+            f"Try adding 1-2 doctors on the scenario comparison page to see the expected improvement. "))
     elif doc_util >= 85:
         info.append(('warning',
             f"Doctor utilisation is {doc_util:.1f}%, the threshold is 85%. "
-            f"A small increase in the number of doctors is recommended to help ease risk of breaches."))
+            f"Peak hours (11am to 2pm) will push utilisation higher than the daily average shown here. Perhaps concentrate doctor capacity at these times - "
+            f"a small increase in the number of doctors is recommended to help ease risk of breaches."))
     elif doc_util >= 70:
         info.append(('success',
-            f"Doctor utilisation is {doc_util:.1f}%. Staff busy while retaining capacity for any unexpected variation in demand. "
+            f"Doctor utilisation is {doc_util:.1f}%. Staff are busy while retaining capacity for any unexpected variation in demand. "
             f"This is a healthy operating range"))
     else:
         info.append(('success',
-            f"Doctor utilisation is {doc_util:.1f}%. Staff have significant spare capacity. "
-            f"Staffing may be higher than needed for current demand levels."))
+            f"Doctor utilisation is {doc_util:.1f}%. Staff have significant spare capacity.  If the breach rate is also low, current doctor staffing may be more than what is needed. "
+            f"Use the scenario comparison page to check the effect of reducing doctors by 1-2 to see how to keep performance within the right range."))
     
     #Triage nurse utilisation
     if triage_util >= 85:
         info.append(('error',
             f"Triage nurse utilisation is {triage_util:.1f}%. There is a current bottleneck, "
-            f"patients are waiting to be assessed before they can join the doctor queue. Increase the number triage nurses to reduce waiting times."))
+            f"patients are waiting to be assessed before they can join the doctor queue. High risk patients may not be identified quickly enough. " 
+            f"Increase the number triage nurses to reduce the overall breach rate more effectively than adding doctors at this point."))
     elif triage_util >= 60:
         info.append(('warning',
-            f"Triage nurse utilisation is {triage_util:.1f}%. Nurses are under a little pressure, it is recommended to closely monitor triage wait times during peak hours"))
+            f"Triage nurse utilisation is {triage_util:.1f}%. Nurses are under a little pressure. " 
+            f"If arrival rates are peaking between 11am and 2pm, hourly triage utilisation during this time will be higher than this daily average. "
+            f"it is recommended to closely monitor triage wait times during peak hours."))
     else:
         info.append(('success',
-            f"Triage nurse utilisation is {triage_util:.1f}%. Triage capacity is comfortable at current staffing levels."))
+            f"Triage nurse utilisation is {triage_util:.1f}%. Triage capacity is comfortable at current staffing levels. "
+            f"If breach rate is still high, the bottleneck is later in the pathway, perhaps in doctor capacity."))
         
     #Mean time in department (240 mins is our 4 hour breach)
     if total_mean > 240:
         info.append(('error',
-            f"The mean time in A&E is {total_mean:.0f} minutes. This is exceeding the 4 hour target on average. This is showing overcrowding across the department rather than outlier long length of stay cases."))
+            f"The mean time in A&E is {total_mean:.0f} minutes. This is exceeding the 4 hour target on average. This is showing overcrowding across the department rather than outlier long length of stay cases. "
+            f"When the mean exceeds 240 mins, most patients experience the long waits at different stages of their pathway, not just one bottleneck"))
     elif total_mean > 180:
         info.append(('warning',
-            f"The mean time in A&E is {total_mean:.0f} minutes. Eventhough the mean is below the 4 hour target, the spread of patient times show a large amount will breach the target."))
+            f"The mean time in A&E is {total_mean:.0f} minutes. Eventhough the mean is below the 4 hour target, the spread of patient times show a large amount will breach the target. "
+            f"Admitted patients are likely driving the breach rate. Perhaps something like increasing ward capacity would address this rather than adding staff"))
     else:
         info.append(('success',
-            f"The mean time in A&E is {total_mean:.0f} minutes. Most patients are moving through the department efficiently"))    
-
+            f"The mean time in A&E is {total_mean:.0f} minutes. Most patients are moving through the department efficiently and "
+            f"most breaches will be isolated cases."))    
+    
+    #Bottleneck help
+    if doc_util> triage_util + 20:
+        info.append(('warning',
+        f"Bottleneck: doctors ({doc_util:.1f}% utilisation) are under more pressure than triage nurses ({triage_util:.1f}%) "
+        f"As of now, adding doctors will have a larger improvement in breach rate than adding nurses"))
+    elif triage_util >doc_util + 20:
+        info.append(('warning',
+        f"Bottleneck: triage nurses ({triage_util:.1f}% utilisation) are under more pressure than doctors *{doc_util:.1f}%) "
+        f"As of now, patients are waiting before they even reach the doctor queue, add triage nurses to see more impact than adding doctors."))
 
     return info
 
