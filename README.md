@@ -95,8 +95,17 @@ In the virtual environment, run:
 streamlit run Home.py
 ```
 
+You may be prompted to enter your email. Leave this blank and press the Enter button on your keyboard to get past this
 Your browser will automatically open at `https://localhost:8501`
 If it doesn't, open your browser and navigate to that address manually
+
+
+---
+
+## Visibility Options
+
+You are able to change between Light and Dark mode. (Dark mode is recommended)
+To do this, navigate to the ellipsis/more options menu button in the top right (3 vertically stacked dots) and select Dark mode
 
 ---
 
